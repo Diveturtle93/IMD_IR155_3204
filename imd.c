@@ -81,10 +81,10 @@ void imd_process (void)
 void imd_status (void)
 {
 	// Einlesen von IMD Ok Pin
-	sdc_in.IMD_OK_IN = HAL_GPIO_ReadPin(IMD_OK_IN_GPIO_Port, IMD_OK_IN_Pin);		// IMD OK einlesen
+	uint8_t imd_ok_in = HAL_GPIO_ReadPin(IMD_OK_IN_GPIO_Port, IMD_OK_IN_Pin);		// IMD OK einlesen
 
 	// Abfrage ob IMD Ok ist
-	if (sdc_in.IMD_OK_IN != 1)
+	if (imd_ok_in != 1)
 	{
 		// Ausgabe IMD OK kommend BMS
 		imd.ImdOK = 1;
@@ -256,7 +256,7 @@ void imd_status (void)
 	}
 
 	// Abfrage Plausibilitaet am IMD
-	if ((sdc_in.IMD_OK_IN == 1) && (imd.PWM_STATUS != 10))
+	if ((imd_ok_in == 1) && (imd.PWM_STATUS != 10))
 	{
 		imd.PWM_STATUS = IMD_PLAUS_ERROR;											// Plausibilitaetsfehler bei IMD ok und falschem Status
 	}

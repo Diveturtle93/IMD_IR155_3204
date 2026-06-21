@@ -10,23 +10,70 @@
 
 // Einfuegen der standard Include-Dateien
 //----------------------------------------------------------------------
-
+#include <math.h>
 //----------------------------------------------------------------------
 
 // Einfuegen der STM Include-Dateien
 //----------------------------------------------------------------------
 #include "main.h"
+#include "tim.h"
 //----------------------------------------------------------------------
 
 // Einfuegen der eigenen Include Dateien
 //----------------------------------------------------------------------
 #include "imd.h"
-#include "BatteriemanagementSystem.h"
+#include "my_math.h"
+#include "millis.h"
 //----------------------------------------------------------------------
 
 // Variablen einbinden
 //----------------------------------------------------------------------
-imd_tag imd;																		// Variable fuer IMD Eigenschaften definieren
+imd_tag imd;																// Variable fuer IMD Eigenschaften definieren
+
+static volatile uint16_t rising = 0, falling = 0;							// Timer Capture Werte
+static volatile uint8_t pwm_change = 0;										// Flag: PWM Pegel hat sich geaendert
+static uint32_t timer1Periode = 0;											// Timer1 Periode fuer Frequenzberechnung
+//----------------------------------------------------------------------
+
+// IMD Timer initialisieren
+//----------------------------------------------------------------------
+void imd_init (void)
+{
+	if (HAL_TIM_Base_Init(&htim1) != HAL_OK);
+	if (HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1) != HAL_OK);
+	if (HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2) != HAL_OK);
+	timer1Periode = (HAL_RCC_GetPCLK2Freq() / (htim1.Init.Prescaler / 2));
+}
+//----------------------------------------------------------------------
+
+// IMD PWM Auswertung
+//----------------------------------------------------------------------
+void imd_process (void)
+{
+	static uint32_t timeIMD = 0;
+
+	// Wenn sich der Pegel am IMD_PWM aendert
+	if (pwm_change == 1)
+	{
+		// IMD Werte berechnen
+		if (rising != 0 && falling != 0)
+		{
+			// Berechne DutyCycle und Frequenz von IMD_PWM
+			uint16_t imd_diff = getDifference(rising, falling);
+			imd.DutyCycle = 100 - round((float)(imd_diff * 100) / (float)rising);
+			imd.Frequency = timer1Periode / rising;
+		}
+
+		// Alle 5s den IMD-Status auslesen
+		if (millis() > (timeIMD + 5000))
+		{
+			imd_status();
+			timeIMD = millis();
+		}
+
+		pwm_change = 0;
+	}
+}
 //----------------------------------------------------------------------
 
 // IMD Status einlesen
@@ -40,14 +87,14 @@ void imd_status (void)
 	if (sdc_in.IMD_OK_IN != 1)
 	{
 		// Ausgabe IMD OK kommend BMS
-		system_out.ImdOK = 1;
-		HAL_GPIO_WritePin(IMD_OK_OUT_GPIO_Port, IMD_OK_OUT_Pin, system_out.ImdOK);	// IMD Status von BMS ausgeben
+		imd.ImdOK = 1;
+		HAL_GPIO_WritePin(IMD_OK_OUT_GPIO_Port, IMD_OK_OUT_Pin, imd.ImdOK);			// IMD Status von BMS ausgeben
 	}
 	else
 	{
 		// Ausgabe IMD nicht Ok kommend BMS
-		system_out.ImdOK = 0;
-		HAL_GPIO_WritePin(IMD_OK_OUT_GPIO_Port, IMD_OK_OUT_Pin, system_out.ImdOK);	// IMD Status von BMS ausgeben
+		imd.ImdOK = 0;
+		HAL_GPIO_WritePin(IMD_OK_OUT_GPIO_Port, IMD_OK_OUT_Pin, imd.ImdOK);			// IMD Status von BMS ausgeben
 	}
 
 #ifdef DEBUG_IMD
@@ -68,13 +115,13 @@ void imd_status (void)
 		case 1:
 		case 0:																		// Case 0 Hz
 			// PWM Pin einlesen
-			system_in.IMD_PWM = HAL_GPIO_ReadPin(IMD_PWM_GPIO_Port, IMD_PWM_Pin);
+			imd.IMD_PWM = HAL_GPIO_ReadPin(IMD_PWM_GPIO_Port, IMD_PWM_Pin);
 
 			// IMD-Widerstand auf Null setzen
 			imd.Resistanc = 0;
 
 			// Wenn IMD 1 ist
-			if (system_in.IMD_PWM == 1)
+			if (imd.IMD_PWM == 1)
 			{
 				// IMD Status speichern
 				imd.PWM_STATUS = IMD_KURZSCHLUSS_KL15;								// Kurzschluss von HV nach Pluspol
@@ -211,7 +258,6 @@ void imd_status (void)
 	// Abfrage Plausibilitaet am IMD
 	if ((sdc_in.IMD_OK_IN == 1) && (imd.PWM_STATUS != 10))
 	{
-		system_in.IMD_PWM_STATUS = IMD_PLAUS_ERROR;									// Plausibilitaetsfehler bei IMD ok und falschem Status
 		imd.PWM_STATUS = IMD_PLAUS_ERROR;											// Plausibilitaetsfehler bei IMD ok und falschem Status
 	}
 
@@ -221,5 +267,25 @@ void imd_status (void)
 	uartTransmitNumber(imd.PWM_STATUS, 10);
 	uartTransmit("\n", 1);
 #endif
+}
+//----------------------------------------------------------------------
+
+// Timer Interrupt fuer IMD PWM-Auswertung
+//----------------------------------------------------------------------
+void IMD_TIM_CaptureCallback (TIM_HandleTypeDef *htim)
+{
+	// Timer 1 fuer IMD PWM-Auswertung
+	if (htim == &htim1)
+	{
+		pwm_change = 1;
+		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+		{
+			rising = calculateMovingAverage(rising, HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1), 10);
+		}
+		else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+		{
+			falling = calculateMovingAverage(falling, HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2), 10);
+		}
+	}
 }
 //----------------------------------------------------------------------

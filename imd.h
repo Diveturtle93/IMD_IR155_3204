@@ -56,8 +56,8 @@ typedef union
 	struct
 	{
 		uint32_t Frequency : 6;					// Frequenz abspeichern		// 0 - 5
-		uint32_t Resistanc : 18;				// Widerstand abspeichern	// 6 - 25
-		uint32_t PWM_STATUS : 4;				// 26 - 29					// 0 = Kurzschluss gegen Masse, 0Hz
+		uint32_t Resistanc : 18;				// Widerstand abspeichern	// 6 - 23
+		uint32_t PWM_STATUS : 4;				// 24 - 27					// 0 = Kurzschluss gegen Masse, 0Hz
 																			// 1 = Normalzustand, 10Hz
 																			// 2 = bei Unterspannung, 20Hz
 																			// 3 = Schnellstart-Messung, 30Hz
@@ -67,6 +67,9 @@ typedef union
 																			// 7 = Frequenz ausserhalb des gueltigen Bereiches
 																			// 8 = DutyCycle ausserhalb des gueltigen Bereiches
 																			// 9 = Plausibilitaetsfehler
+		uint32_t ImdOK : 1;						// IMD OK Ausgabe			// 28
+		uint32_t IMD_PWM : 1;					// IMD PWM Eingang			// 29
+		uint32_t : 2;							// Free						// 30 - 31
 		uint8_t DutyCycle : 7;					// Duty-Cycle abspeichern	// 32 - 38
 		uint8_t : 1;							// Free						// 39
 	};
@@ -96,6 +99,8 @@ extern imd_tag imd;															// Variable fuer IMD Eigenschaften definieren
 
 // Funktionen definieren
 //----------------------------------------------------------------------
+void imd_init (void);														// IMD Timer initialisieren
+void imd_process (void);													// IMD PWM Auswertung
 void imd_status (void);														// IMD OK einlesen
 //----------------------------------------------------------------------
 

@@ -3,9 +3,9 @@
 //----------------------------------------------------------------------
 // Sprache	:	C
 // Datum	:	29.08.2021
-// Version	:	1.0
 // Autor	:	Diveturtle93
 // Projekt	:	IMD
+// Quelle	:
 //----------------------------------------------------------------------
 
 // Sicherheitssymbol
@@ -29,12 +29,12 @@
 
 //----------------------------------------------------------------------
 
-// Einfuegen der eigenen Include Dateien
+// Einfuegen der eigenen Include-Dateien
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
 
-// Define Debug Symbols
+// Definiere Debug-Symbole
 //----------------------------------------------------------------------
 #ifdef DEBUG
 //	#define DEBUG_IMD
@@ -43,10 +43,10 @@
 
 // Version definieren
 //----------------------------------------------------------------------
-#define IMD_MAJOR							0
-#define IMD_MINOR							0
-#define IMD_PATCH							0
-#define IMD_DEV								0
+#define IMD_MAJOR								1
+#define IMD_MINOR								0
+#define IMD_PATCH								0
+#define IMD_DEV									0
 //----------------------------------------------------------------------
 
 // Eingangsstrukturen definieren
@@ -80,16 +80,16 @@ typedef union
 
 // Konstanten definieren
 //----------------------------------------------------------------------
-#define IMD_KURZSCHLUSS_GND					0								// 0 = Kurzschluss gegen Masse, 0Hz
-#define IMD_NORMAL							1								// 1 = Normalzustand, 10Hz
-#define IMD_UNTERSPANNUNG					2								// 2 = bei Unterspannung, 20Hz
-#define IMD_SCHNELLSTART					3								// 3 = Schnellstart-Messung, 30Hz
-#define IMD_GERAETEFEHLER					4								// 4 = Geraetefehler, 40Hz
-#define IMD_ANSCHLUSSFEHLER_ERDE			5								// 5 = Anschlussfehler gegen Erde, 50Hz
-#define IMD_KURZSCHLUSS_KL15				6								// 6 = Kurzschluss gegen KL15, 0Hz
-#define IMD_FREQ_ERROR						7								// 7 = Frequenz ausserhalb des gueltigen Bereiches
-#define IMD_DUTY_ERROR						8								// 8 = DutyCycle ausserhalb des gueltigen Bereiches
-#define IMD_PLAUS_ERROR						9								// 9 = Plausibilitaetsfehler
+#define IMD_KURZSCHLUSS_GND						0							// 0 = Kurzschluss gegen Masse, 0Hz
+#define IMD_NORMAL								1							// 1 = Normalzustand, 10Hz
+#define IMD_UNTERSPANNUNG						2							// 2 = bei Unterspannung, 20Hz
+#define IMD_SCHNELLSTART						3							// 3 = Schnellstart-Messung, 30Hz
+#define IMD_GERAETEFEHLER						4							// 4 = Geraetefehler, 40Hz
+#define IMD_ANSCHLUSSFEHLER_ERDE				5							// 5 = Anschlussfehler gegen Erde, 50Hz
+#define IMD_KURZSCHLUSS_KL15					6							// 6 = Kurzschluss gegen KL15, 0Hz
+#define IMD_FREQ_ERROR							7							// 7 = Frequenz ausserhalb des gueltigen Bereiches
+#define IMD_DUTY_ERROR							8							// 8 = DutyCycle ausserhalb des gueltigen Bereiches
+#define IMD_PLAUS_ERROR							9							// 9 = Plausibilitaetsfehler
 //----------------------------------------------------------------------
 
 // Definiere globale Variablen
@@ -102,6 +102,7 @@ extern imd_tag imd;															// Variable fuer IMD Eigenschaften definieren
 void imd_init (void);														// IMD Timer initialisieren
 void imd_process (void);													// IMD PWM Auswertung
 void imd_status (void);														// IMD OK einlesen
+void IMD_TIM_CaptureCallback (TIM_HandleTypeDef *htim);						// Timer Interrupt fuer IMD PWM-Auswertung
 //----------------------------------------------------------------------
 
 #endif /* INC_IMD_H_ */
